@@ -1,0 +1,27 @@
+{
+  "name": "be-lab4-login",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NiklasWuerfl/BE-Lab4-Login.git"
+  },
+  "author": "Niklas Wuerfl",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NiklasWuerfl/BE-Lab4-Login/issues"
+  },
+  "homepage": "https://github.com/NiklasWuerfl/BE-Lab4-Login#readme",
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "dotenv": "^16.0.3",
+    "ejs": "^3.1.8",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
+    "sqlite3": "^5.1.4"
+  }
+}
