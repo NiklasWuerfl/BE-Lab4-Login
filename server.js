@@ -35,11 +35,12 @@ app.post('/identify', async (req, res) => {
   currentPassword = username
   try {
     currentUser = await database.getUserPassword(currentPassword)
-    if (currentUser.role === 'admin') {
-      res.redirect('/admin')
-    } else {
-      res.redirect('/granted')
-    }
+    // if (currentUser.role === 'admin') {
+    //   res.redirect('/admin')
+    // } else {
+    //   res.redirect('/granted')
+    // }
+    res.redirect(`/users/${currentUser.userID}`)
   }
   catch {
     // alert('Invalid Password')
@@ -153,5 +154,68 @@ app.get('/teacher', authenticateTeacher , (req, res) => {
   })
 })
 
+function authenticateUser(req, res, next) {
+  if (!generalAuthentification()) res.redirect('/identify')
+  else if (req.params.userID === currentUser.userID) next()
+  else {
+    res.redirect('/identify').status(401) 
+    // supposed to send error.. Isn't working
+  }
+}
 
+app.get('/users/:userID', authenticateUser, (req, res) => {
+  res.render('start.ejs', {
+    message: `You are ${req.params.userID}.`
+  })
+})
+
+app.get('/register', (req, res) => {
+  res.render('register.ejs')
+})
+
+app.post('/register', async (req, res) => {
+  try{
+    if (req.body.password !== req.body.passwordRep) {
+      res.status(400).render('fail.ejs', {
+        message: "The passwords you entered don't match"
+      })
+      return
+    }
+    else if (req.body.password.length < 3) {
+      res.status(400).render('fail.ejs', {
+        message: "The password is too short. It should have at least 3 characters."
+      })
+      return
+    }
+    // if (await database.getAllUsernames().includes(req.body.username)) {
+    //   res.sendStatus(400).statusMessage("You cannot use this username.")
+    // }
+    const allUsernames = await database.getAllUsernames()
+    if (allUsernames.includes(req.body.name)) {
+      res.status(400).render('fail.ejs', {
+        message: "You cannot use this name."
+      })
+      // res.status(400).render('failRegName.ejs')
+      return
+    }
+
+    const allUserIDs = await database.getAllIDs()
+    if (allUserIDs.includes(req.body.id)) {
+      res.status(400).render('fail.ejs', {
+        message: "You cannot use this UserID."
+      })
+      // res.status(400).render('failRegName.ejs')
+      return
+    }
+
+    let encryptedPassword = await bcrypt.hash(req.body.password,10)
+    console.log(await database.addUser(req.body.id, req.body.name, req.body.role, req.body.password))
+
+    req.method = 'GET'
+    res.status(201).redirect('/identify')
+  }
+  catch {
+    res.status(500).statusMessage('There is an internal error.')
+  }
+})
 

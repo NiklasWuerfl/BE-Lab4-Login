@@ -1,0 +1,29 @@
+<h1>Register</h1>
+<form action="/register" method="POST">
+  <div>
+    <label for="id">Select your UserID</label>
+    <input type="number" name="id" id="id" required>
+  </div>
+  <div>
+    <label for="name">Choose a Name</label>
+    <input type="text" id = "name" name = "name" required>
+  </div>
+  <div>
+    <label for="role">Select your role</label>
+    <select name="role" id="role">
+      <option value="student1">Student1</option>
+      <option value="student2">Student2</option>
+      <option value="teacher">Teacher</option>
+    </select>
+  </div>
+  <div>
+    <label for="password">Insert your passwort</label>
+    <input type="password" id = "password" name = "password" required>
+  </div>
+  <div>
+    <label for="passwordRep">Repeat your passwort</label>
+    <input type="password" id = "passwordRep" name = "passwordRep" required>
+  </div>
+  <button type="submit">Register</button>
+</form>
+<p>You will be brought to the login page if the registration is successful.</p>

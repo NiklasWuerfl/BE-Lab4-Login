@@ -35,11 +35,46 @@ function getAllUsers () {
   })
 }
 
+function getAllUsernames () {
+  return new Promise((resolve, reject) => {
+    let sql = "SELECT name FROM users"
+    db.all(sql, [], (err, rows) => {
+      if (err) reject(err)
+      else resolve(rows.map(element => element.name))
+    })
+  })
+}
+
+function getAllIDs () {
+  return new Promise((resolve, reject) => {
+    let sql = "SELECT userID FROM users"
+    db.all(sql, [], (err, rows) => {
+      if (err) reject(err)
+      else resolve(rows.map(element => element.name))
+    })
+  })
+}
+
+function addUser(userID, name, role, password) {
+  return new Promise((resolve, reject) => {
+    let sql = `INSERT INTO users (userID, name, role, password) VALUES (?, ?, ?, ?)`
+    db.run(sql, [userID, name, role, password], (err) => {
+      if (err) {
+        reject(err)
+      }
+      else {
+        resolve(`The user "${name}" has been added to the database.`)
+      }
+    })
+  })
+}
+
+
 module.exports = {
   init,
   getUserPassword,
-  getAllUsers
-  // getUser,
-  // getAllUsernames,
-  // addUser
+  getAllUsers,
+  getAllIDs,
+  getAllUsernames,
+  addUser
 }
