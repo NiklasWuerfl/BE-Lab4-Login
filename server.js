@@ -14,10 +14,14 @@ let currentKey = ""
 let currentPassword = ""
 let currentUser;
 
-app.listen(port, () => {
+app.listen(port, async() => {
   console.log("Server is running on port " + port)
   try {
     database.init()
+    database.addUser("id1", "user1", "student1", await bcrypt.hash("password", 10))
+    database.addUser("id2", "user2", "student2", await bcrypt.hash("password2", 10))
+    database.addUser("id3", "user3", "teacher", await bcrypt.hash("password3", 10))
+    database.addUser("admin", "admin", "admin", await bcrypt.hash("admin", 10))
   }
   catch {
     res.status(500).statusMessage('There is a problem with the database or the DB connection')
@@ -34,19 +38,23 @@ app.post('/identify', async (req, res) => {
   currentKey = token
   currentPassword = username
   try {
-    currentUser = await database.getUserPassword(currentPassword)
-    // if (currentUser.role === 'admin') {
-    //   res.redirect('/admin')
-    // } else {
-    //   res.redirect('/granted')
-    // }
-    res.redirect(`/users/${currentUser.userID}`)
+    currentUser = await database.getUser(req.body.name)
   }
   catch {
     // alert('Invalid Password')
-    console.log('Invalid Password');
-    res.redirect('/identify')
+    res.status(404).redirect('/identify')
+    console.log('Failed login, User not found')
+      return
   }
+  const correctPW = await bcrypt.compare(req.body.password, currentUser.password)
+  if (correctPW) {
+    // let token = jwt.sign('username', process.env.TOKEN)
+    // console.log("JWT:", token)
+    console.log('Successful login')
+    res.redirect(`/users/${currentUser.userID}`)
+    return
+  }
+  console.log('Wrong password')
 })
 
 app.get('/identify', (req, res) => {
@@ -158,7 +166,7 @@ function authenticateUser(req, res, next) {
   if (!generalAuthentification()) res.redirect('/identify')
   else if (req.params.userID === currentUser.userID) next()
   else {
-    res.redirect('/identify').status(401) 
+    res.status(401).redirect('/identify')
     // supposed to send error.. Isn't working
   }
 }
@@ -209,7 +217,8 @@ app.post('/register', async (req, res) => {
     }
 
     let encryptedPassword = await bcrypt.hash(req.body.password,10)
-    console.log(await database.addUser(req.body.id, req.body.name, req.body.role, req.body.password))
+    console.log(await database.addUser(req.body.id, req.body.name, req.body.role, encryptedPassword))
+    // password must be saved encrypted, and verified encrypted!
 
     req.method = 'GET'
     res.status(201).redirect('/identify')
