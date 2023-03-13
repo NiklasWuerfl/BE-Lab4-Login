@@ -25,9 +25,20 @@ function getUserPassword(password) {
   })
 }
 
+function getAllUsers () {
+  return new Promise((resolve, reject) => {
+    let sql = "SELECT * FROM users"
+    db.all(sql, [], (err, rows) => {
+      if (err) reject(err)
+      else resolve(rows)
+    })
+  })
+}
+
 module.exports = {
   init,
-  getUserPassword
+  getUserPassword,
+  getAllUsers
   // getUser,
   // getAllUsernames,
   // addUser

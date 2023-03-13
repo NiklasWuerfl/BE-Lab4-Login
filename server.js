@@ -35,7 +35,11 @@ app.post('/identify', async (req, res) => {
   currentPassword = username
   try {
     currentUser = await database.getUserPassword(currentPassword)
-    res.redirect('/granted')
+    if (currentUser.role === 'admin') {
+      res.redirect('/admin')
+    } else {
+      res.redirect('/granted')
+    }
   }
   catch {
     // alert('Invalid Password')
@@ -64,10 +68,38 @@ app.get('/granted',authenticateToken, (req, res) => {
   })
 })
 
-function authenticateRole(req, res, next) {
+function authenticateAdmin(req, res, next) {
+  if (currentKey == "") {
+    res.redirect('/identify')
+  } else if (jwt.verify(currentKey, process.env.ACCESS_TOKEN_SECRET)) {
+      if (currentUser.role === 'admin') next()
+      else {
+        res.redirect('/granted').status(401)
+        // supposed to send error.. Isn't working
+      }
+  } else {
+      res.redirect('/identify')
+    }
   
 }
 
-app.get('/admin', authenticateRole ,(req, res) => {
-  res.render('admin.ejs')
+async function createAdminTable() {
+  let users = await database.getAllUsers()
+  console.log(users)
+  let htmlArray = users.map(({ userID, name, role, password }) => /*html*/ `
+    <tr>
+      <td>${userID}</td>
+      <td>${name}</td>
+      <td>${role}</td>
+      <td>${password}</td>
+    </tr>
+  `)
+  return htmlArray.join('')
+}
+
+
+app.get('/admin', authenticateAdmin ,async (req, res) => {
+  res.render('admin.ejs', {
+    table: await createAdminTable()
+  })
 })
