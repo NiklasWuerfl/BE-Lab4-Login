@@ -52,14 +52,19 @@ app.get('/identify', (req, res) => {
   res.render('identify.ejs')
 })
 
-function authenticateToken(req, res, next) {
+function generalAuthentification() {
   if (currentKey == "") {
-    res.redirect('/identify')
+    return false
   } else if (jwt.verify(currentKey, process.env.ACCESS_TOKEN_SECRET)) {
-    next()
+    return true
   } else {
-    res.redirect ('/identify')
+    return false
   }
+}
+
+function authenticateToken(req, res, next) {
+  if (! generalAuthentification()) res.redirect('/identify')
+  else next()
 }
 
 app.get('/granted',authenticateToken, (req, res) => {
@@ -69,23 +74,16 @@ app.get('/granted',authenticateToken, (req, res) => {
 })
 
 function authenticateAdmin(req, res, next) {
-  if (currentKey == "") {
-    res.redirect('/identify')
-  } else if (jwt.verify(currentKey, process.env.ACCESS_TOKEN_SECRET)) {
-      if (currentUser.role === 'admin') next()
-      else {
-        res.redirect('/granted').status(401)
-        // supposed to send error.. Isn't working
-      }
-  } else {
-      res.redirect('/identify')
-    }
-  
+  if (!generalAuthentification()) res.redirect('/identify')
+  else if (currentUser.role === 'admin') next()
+  else {
+    res.redirect('/identify').status(401) 
+    // supposed to send error.. Isn't working
+  }
 }
 
 async function createAdminTable() {
   let users = await database.getAllUsers()
-  console.log(users)
   let htmlArray = users.map(({ userID, name, role, password }) => /*html*/ `
     <tr>
       <td>${userID}</td>
@@ -98,8 +96,62 @@ async function createAdminTable() {
 }
 
 
-app.get('/admin', authenticateAdmin ,async (req, res) => {
+app.get('/admin', authenticateAdmin , async (req, res) => {
   res.render('admin.ejs', {
     table: await createAdminTable()
   })
 })
+
+app.get('/admin', authenticateAdmin , async (req, res) => {
+  res.render('admin.ejs', {
+    table: await createAdminTable()
+  })
+})
+
+function authenticateStudent1(req, res, next) {
+  if (!generalAuthentification()) res.redirect('/identify')
+  else if (['admin', 'teacher', 'student1'].includes(currentUser.role)) next()
+  else {
+    res.redirect('/identify').status(401) 
+    // supposed to send error.. Isn't working
+  }
+}
+
+app.get('/student1', authenticateStudent1 , (req, res) => {
+  res.render('student1.ejs', {
+    message: currentUser.name
+  })
+})
+
+function authenticateStudent2(req, res, next) {
+  if (!generalAuthentification()) res.redirect('/identify')
+  else if (['admin', 'teacher', 'student2'].includes(currentUser.role)) next()
+  else {
+    res.redirect('/identify').status(401) 
+    // supposed to send error.. Isn't working
+  }
+}
+
+app.get('/student2', authenticateStudent2 , (req, res) => {
+  res.render('student2.ejs', {
+    message: currentUser.name
+  })
+})
+
+function authenticateTeacher(req, res, next) {
+  if (!generalAuthentification()) res.redirect('/identify')
+  else if (['admin', 'teacher'].includes(currentUser.role)) next()
+  else {
+    res.redirect('/identify').status(401) 
+    // supposed to send error.. Isn't working
+  }
+}
+
+app.get('/teacher', authenticateTeacher , (req, res) => {
+  res.render('teacher.ejs', {
+    message: currentUser.name
+  })
+})
+
+
+

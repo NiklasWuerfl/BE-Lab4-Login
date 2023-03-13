@@ -6,8 +6,8 @@ async function init() {
   await db.serialize(() => {
     db.run('DROP TABLE IF EXISTS users')
     db.run('CREATE TABLE users (userID text PRIMARY KEY UNIQUE, name text, role text, password text)')
-    db.run('INSERT INTO users (userID, name, role, password) VALUES ("id1", "user1", "student", "password")')
-    db.run('INSERT INTO users (userID, name, role, password) VALUES ("id2", "user2", "student", "password2")')
+    db.run('INSERT INTO users (userID, name, role, password) VALUES ("id1", "user1", "student1", "password")')
+    db.run('INSERT INTO users (userID, name, role, password) VALUES ("id2", "user2", "student2", "password2")')
     db.run('INSERT INTO users (userID, name, role, password) VALUES ("id3", "user3", "teacher", "password3")')
     db.run('INSERT INTO users (userID, name, role, password) VALUES ("admin", "admin", "admin", "admin")')
   })
