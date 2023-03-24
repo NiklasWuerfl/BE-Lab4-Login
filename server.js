@@ -4,15 +4,14 @@ const app = express()
 app.set('view-engine', 'ejs')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const cook = require('cookie-parser')
 require('dotenv').config()
 const port = process.env.PORT
 
 app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
+app.use(cook())
 
-let currentKey = ""
-let currentPassword = ""
-let currentUser;
 
 app.listen(port, async() => {
   console.log("Server is running on port " + port)
@@ -33,24 +32,28 @@ app.get('/', (req, res) => {
 })
 
 app.post('/identify', async (req, res) => {
-  const username = req.body.password
-  const token = jwt.sign(username, process.env.ACCESS_TOKEN_SECRET)
-  currentKey = token
-  currentPassword = username
+
+  const cookieOptions = { 
+    httpOnly: true, // Set cookie to httpOnly it can only be accessed by the server and not by client-side scripts. 
+    maxAge: 86400000 // Set cookie to expire after 1 day (in milliseconds)
+  };
+
+  let currentUser = []
+  let token
   try {
     currentUser = await database.getUser(req.body.name)
+    token = jwt.sign({ userID: currentUser.userID, name: currentUser.name, role: currentUser.role}, process.env.ACCESS_TOKEN_SECRET)
   }
   catch {
     // alert('Invalid Password')
-    res.status(404).redirect('/identify')
+    res.status(404).redirect('/identify') 
     console.log('Failed login, User not found')
       return
   }
   const correctPW = await bcrypt.compare(req.body.password, currentUser.password)
   if (correctPW) {
-    // let token = jwt.sign('username', process.env.TOKEN)
-    // console.log("JWT:", token)
     console.log('Successful login')
+    res.cookie("jwt", token, cookieOptions); // Send JWT in a cookie
     res.redirect(`/users/${currentUser.userID}`)
     return
   }
@@ -61,33 +64,34 @@ app.get('/identify', (req, res) => {
   res.render('identify.ejs')
 })
 
-function generalAuthentification() {
-  if (currentKey == "") {
-    return false
-  } else if (jwt.verify(currentKey, process.env.ACCESS_TOKEN_SECRET)) {
-    return true
+function generalAuthentification(req, res, next) {
+  let decoded
+  if (!req.cookies || !req.cookies.jwt) {
+    console.log("hello");
+    res.redirect('/identify')
+  } else if ( decoded = jwt.verify(req.cookies.jwt, process.env.ACCESS_TOKEN_SECRET)) {
+    req.user = {
+      userID: decoded.userID,
+      name: decoded.name,
+      role: decoded.role,
+    }
+    next()
   } else {
-    return false
+    res.redirect('/identify')
   }
 }
 
-function authenticateToken(req, res, next) {
-  if (! generalAuthentification()) res.redirect('/identify')
-  else next()
-}
 
-app.get('/granted',authenticateToken, (req, res) => {
+app.get('/granted',generalAuthentification, (req, res) => {
   res.render('start.ejs', {
-    message: `${currentUser.name}`
+    message: `${req.user.name}`
   })
 })
 
 function authenticateAdmin(req, res, next) {
-  if (!generalAuthentification()) res.redirect('/identify')
-  else if (currentUser.role === 'admin') next()
+  if (req.user.role === 'admin') next()
   else {
-    res.redirect('/identify').status(401) 
-    // supposed to send error.. Isn't working
+    res.redirect(401, '/identify') 
   }
 }
 
@@ -105,73 +109,60 @@ async function createAdminTable() {
 }
 
 
-app.get('/admin', authenticateAdmin , async (req, res) => {
+app.get('/admin', generalAuthentification,authenticateAdmin , async (req, res) => {
   res.render('admin.ejs', {
     table: await createAdminTable()
   })
 })
 
-app.get('/admin', authenticateAdmin , async (req, res) => {
-  res.render('admin.ejs', {
-    table: await createAdminTable()
-  })
-})
 
 function authenticateStudent1(req, res, next) {
-  if (!generalAuthentification()) res.redirect('/identify')
-  else if (['admin', 'teacher', 'student1'].includes(currentUser.role)) next()
+  if (['admin', 'teacher', 'student1'].includes(req.user.role)) next()
   else {
-    res.redirect('/identify').status(401) 
-    // supposed to send error.. Isn't working
+    res.redirect(401, '/identify') 
   }
 }
 
-app.get('/student1', authenticateStudent1 , (req, res) => {
+app.get('/student1', generalAuthentification,authenticateStudent1 , (req, res) => {
   res.render('student1.ejs', {
-    message: currentUser.name
+    message: req.user.name
   })
 })
 
 function authenticateStudent2(req, res, next) {
-  if (!generalAuthentification()) res.redirect('/identify')
-  else if (['admin', 'teacher', 'student2'].includes(currentUser.role)) next()
+  if (['admin', 'teacher', 'student2'].includes(req.user.role)) next()
   else {
-    res.redirect('/identify').status(401) 
-    // supposed to send error.. Isn't working
+    res.redirect(401, '/identify')
   }
 }
 
-app.get('/student2', authenticateStudent2 , (req, res) => {
+app.get('/student2', generalAuthentification,authenticateStudent2 , (req, res) => {
   res.render('student2.ejs', {
-    message: currentUser.name
+    message: req.user.name
   })
 })
 
 function authenticateTeacher(req, res, next) {
-  if (!generalAuthentification()) res.redirect('/identify')
-  else if (['admin', 'teacher'].includes(currentUser.role)) next()
+  if (['admin', 'teacher'].includes(req.user.role)) next()
   else {
-    res.redirect('/identify').status(401) 
-    // supposed to send error.. Isn't working
+    res.redirect(401, '/identify')
   }
 }
 
-app.get('/teacher', authenticateTeacher , (req, res) => {
+app.get('/teacher', generalAuthentification,authenticateTeacher , (req, res) => {
   res.render('teacher.ejs', {
-    message: currentUser.name
+    message: req.user.name
   })
 })
 
 function authenticateUser(req, res, next) {
-  if (!generalAuthentification()) res.redirect('/identify')
-  else if (req.params.userID === currentUser.userID) next()
+  if (req.params.userID === req.user.userID) next()
   else {
-    res.status(401).redirect('/identify')
-    // supposed to send error.. Isn't working
+    res.redirect(401, '/identify')
   }
 }
 
-app.get('/users/:userID', authenticateUser, (req, res) => {
+app.get('/users/:userID', generalAuthentification,authenticateUser, (req, res) => {
   res.render('start.ejs', {
     message: `You are ${req.params.userID}.`
   })
@@ -224,7 +215,7 @@ app.post('/register', async (req, res) => {
     res.status(201).redirect('/identify')
   }
   catch {
-    res.status(500).statusMessage('There is an internal error.')
+    res.status(500).send('There is an internal error.')
   }
 })
 

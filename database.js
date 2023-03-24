@@ -50,7 +50,7 @@ function getAllIDs () {
     let sql = "SELECT userID FROM users"
     db.all(sql, [], (err, rows) => {
       if (err) reject(err)
-      else resolve(rows.map(element => element.name))
+      else resolve(rows.map(element => element.userID))
     })
   })
 }
