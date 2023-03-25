@@ -32,7 +32,8 @@ Takes the user's name and password as input (from identify.ejs), and if the inpu
 #### possible Errors
 * Wrong password
 * User not found
--> Server renders fail.ejs and displays an appropriate message. From this view, the user can navigate to the relevant routes /identify and /register.
+
+--> Server renders fail.ejs and displays an appropriate message. From this view, the user can navigate to the relevant routes /identify and /register.
 
 ### GET /granted
 Requires a valid cookie/token. Renders a welcome page (start.ejs) with a greeting message that includes the user's name.
@@ -62,8 +63,10 @@ Takes the user's ID, name, role, and password as input (from register.ejs), and 
 * Password is too short (shorter than 3 characters)
 * Username is already used
 * UserID is already used
--> Server renders fail.ejs and displays an appropriate message. From this view, the user can navigate to the relevant routes /identify and /register and try again from there.
+
+--> Server renders fail.ejs and displays an appropriate message. From this view, the user can navigate to the relevant routes /identify and /register and try again from there.
 * Error when trying to add to database
--> Error 500
+
+--> Error 500
 
 ## Author: Niklas Würfl
