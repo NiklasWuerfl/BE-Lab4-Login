@@ -45,8 +45,9 @@ app.post('/identify', async (req, res) => {
     token = jwt.sign({ userID: currentUser.userID, name: currentUser.name, role: currentUser.role}, process.env.ACCESS_TOKEN_SECRET)
   }
   catch {
-    // alert('Invalid Password')
-    res.status(404).redirect('/identify') 
+    res.status(404).render('fail.ejs', {
+      message: "User not found"
+    })
     console.log('Failed login, User not found')
       return
   }
@@ -58,6 +59,9 @@ app.post('/identify', async (req, res) => {
     return
   }
   console.log('Wrong password')
+  res.status(400).render('fail.ejs', {
+    message: "Wrong password"
+  })
 })
 
 app.get('/identify', (req, res) => {
